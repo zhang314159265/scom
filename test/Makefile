@@ -11,3 +11,7 @@ test_str:
 test_vec:
 	gcc test_vec.c $(CFLAGS)
 	./a.out
+
+test_util:
+	gcc test_util.c $(CFLAGS)
+	./a.out
