@@ -16,6 +16,12 @@ typedef uint16_t Elf32_Section;
 
 #define EI_NIDENT 16
 
+#define EI_CLASS 4 /* File class byte index */
+#define ELFCLASSNONE 0 /* invalid class */
+#define ELFCLASS32 1 /* 32 bit object */
+#define ELFCLASS64 2 /* 64 bit object */
+#define ELFCLASSNUM 3
+
 #define ET_REL 1 /* relocatable file */
 #define ET_EXEC 2 /* executable file */
 
