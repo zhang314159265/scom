@@ -20,3 +20,7 @@ test_elf_reader:
 	gcc -m32 -c sum.c -o /tmp/sum.o
 	gcc test_elf_reader.c $(CFLAGS)
 	./a.out /tmp/sum.o
+
+test_elf_writer:
+	gcc test_elf_writer.c $(CFLAGS)
+	./a.out

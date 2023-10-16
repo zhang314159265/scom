@@ -38,10 +38,8 @@ int main(int argc, char** argv) {
 	}
 	assert(ELF_FILE_PATH && "missing the elf file for testing");
 
-	#if 0
 	test_create_and_free();
 	test_text_section_exists();
-	#endif
 	test_syms();
 	printf("PASS!\n");
 	return 0;
