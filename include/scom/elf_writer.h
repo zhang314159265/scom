@@ -42,7 +42,7 @@ static void elfw_init_ehdr(struct elf_writer* writer) {
   ehdr->e_type = ET_EXEC;
   ehdr->e_machine = EM_386;
   ehdr->e_version = 1;
-  ehdr->e_entry = EXECUTABLE_START_VA;
+  ehdr->e_entry = 0; // usually decided by the address of _start symbol
   ehdr->e_phoff = 0;
   ehdr->e_shoff = 0;
   ehdr->e_flags = 0;
@@ -72,7 +72,7 @@ static struct elf_writer elfw_create() {
 	writer.ehdr.e_shstrndx = elfw_add_shdr(&writer, ".shstrtab", SHT_STRTAB, 0, 0, 0, 1, 0);
 
 	writer.next_file_off = sizeof(writer.ehdr);
-	writer.next_va = writer.ehdr.e_entry;
+	writer.next_va = EXECUTABLE_START_VA;
 
 	return writer;
 }
