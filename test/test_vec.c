@@ -22,9 +22,18 @@ void test_read_back() {
 	vec_free(&vec);
 }
 
+void test_csv() {
+	struct vec vec = vec_create_from_csv("hello,world");
+	assert(vec.len == 2);
+	assert(strcmp(*(char**) vec_get_item(&vec, 0), "hello") == 0);
+	assert(strcmp(*(char**) vec_get_item(&vec, 1), "world") == 0);
+	vec_free(&vec);
+}
+
 int main(void) {
 	test_nomalloc_in_creator();
 	test_read_back();
+	test_csv();
 	printf("PASS!\n");
 	return 0;
 }

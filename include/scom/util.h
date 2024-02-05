@@ -31,3 +31,11 @@ static int endswith(const char* s, const char* t) {
 
   return l1 >= l2 && strcmp(s + l1 - l2, t) == 0;
 }
+
+static char* lenstrdup(const char* src, int len) {
+  char* dst = (char*) malloc(len + 1);
+  assert(dst != NULL);
+  memcpy(dst, src, len);
+  dst[len] = '\0';
+  return dst;
+}

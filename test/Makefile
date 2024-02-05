@@ -1,5 +1,7 @@
 CFLAGS := -I../include -m32 -g
 
+first: test_vec
+
 test_dict:
 	gcc test_dict.c $(CFLAGS)
 	./a.out
