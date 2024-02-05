@@ -219,9 +219,9 @@ static struct elf_reader elfr_create_from_buffer(const char* buf, int size) {
     }
 	}
 
-	// We require .symtab and it's string table for now
-	assert(reader.symtab != NULL);
-	assert(reader.symstr != NULL);
+	// some ELF file may don't have a SYMTAB. We assume that SYMTAB and SYMSTR should
+  // either both exist and neither exist.
+	assert((reader.symtab != NULL) == (reader.symstr != NULL));
   return reader;
 }
 
