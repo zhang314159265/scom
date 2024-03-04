@@ -9,6 +9,8 @@
 #undef FAIL
 #endif
 
+// Thanks to macro, the string formating does not need to be explicitly
+// handled here.
 #define FAIL(fmt...) { \
   fprintf(stderr, "%s:%d: Encounter the following error and abort:\n", __FILE__, __LINE__); \
   fprintf(stderr, "\033[31m"); \

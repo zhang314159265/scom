@@ -26,3 +26,7 @@ test_elf_reader:
 test_elf_writer:
 	gcc test_elf_writer.c $(CFLAGS)
 	./a.out
+
+test_check:
+	gcc test_check.c $(CFLAGS)
+	./a.out
