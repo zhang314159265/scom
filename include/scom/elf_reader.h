@@ -286,6 +286,27 @@ static int elfr_is_defined_section(struct elf_reader* reader, int secno) {
 }
 
 /*
+ * Fill in 'names' and 'weaks' with global symbol name and if the symbol is weak.
+ * If either vec* is NULL then the filling is skipped.
+ */
+static void elfr_get_global_defined_syms2(struct elf_reader *reader, struct vec *names, struct vec *weaks) {
+	bool trueval = 1, falseval = 0;
+  for (int i = 0; i < reader->symtab_size; ++i) {
+    Elf32_Sym* sym = reader->symtab + i;
+    int bind = ELF32_ST_BIND(sym->st_info);
+    char* name = reader->symstr + sym->st_name;
+    if ((bind == STB_GLOBAL || bind == STB_WEAK) && elfr_is_defined_section(reader, sym->st_shndx)) {
+			if (names) {
+	      vec_append(names, &name);
+		  }
+			if (weaks) {
+				vec_append(weaks, bind == STB_GLOBAL ? &falseval : &trueval);
+			}
+    }
+  }
+}
+
+/*
  * Return the list of global symbols defined in this elf file.
  * This is basically the symbols that this elf file define and can be used to
  * resolve undefined symbols in other elf files during linking.
@@ -298,15 +319,7 @@ static int elfr_is_defined_section(struct elf_reader* reader, int secno) {
  */
 static struct vec elfr_get_global_defined_syms(struct elf_reader* reader) {
   struct vec names = vec_create(sizeof(char*));
-  for (int i = 0; i < reader->symtab_size; ++i) {
-    Elf32_Sym* sym = reader->symtab + i;
-    int bind = ELF32_ST_BIND(sym->st_info);
-    char* name = reader->symstr + sym->st_name;
-    if ((bind == STB_GLOBAL || bind == STB_WEAK) && elfr_is_defined_section(reader, sym->st_shndx)) {
-      vec_append(&names, &name);
-    }
-  }
-
+	elfr_get_global_defined_syms2(reader, &names, NULL);
   return names;
 }
 

@@ -120,15 +120,15 @@ static inline void* vec_pop_item(struct vec* vec) {
 }
 
 /*
- * return 1 if string is found, 0 otherwise.
+ * return the first index if string is found, -1 otherwise.
  * This does a linear scan thru the vector.
  */
 static inline int vec_str_find(struct vec* vec, char* needle) {
   assert(vec->itemsize == sizeof(char*));  // this is the best check we can have RN since we don't store item type
-  VEC_FOREACH(vec, char*, item_ptr) {
+  VEC_FOREACH_I(vec, char*, item_ptr, i) {
     if (strcmp(*item_ptr, needle) == 0) {
-      return 1;
+      return i;
     }
   }
-  return 0;
+  return -1;
 }

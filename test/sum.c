@@ -17,7 +17,7 @@ int sum(int n) {
  * sumsin will refer to an undefined symbol sin which need to be resolved by
  * the linker later.
  */
-float sumsin(int n) {
+float __attribute__((weak)) sumsin(int n) {
   float ans = 0;
   for (int i = 1; i <= n; ++i) {
     ans += sin((float)n);

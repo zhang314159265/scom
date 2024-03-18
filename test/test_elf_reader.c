@@ -18,16 +18,35 @@ void test_text_section_exists() {
 	elfr_free(&elfr);
 }
 
+void test_syms2() {
+	struct elf_reader elfr = elfr_create(ELF_FILE_PATH);
+	struct vec names = vec_create(sizeof(char*));
+	struct vec weaks = vec_create(sizeof(bool));
+
+	elfr_get_global_defined_syms2(&elfr, &names, &weaks);
+	int idx = vec_str_find(&names, "sum");
+	assert(idx >= 0);
+	assert(!*(bool*) vec_get_item(&weaks, idx)); // strong symbol
+
+	idx = vec_str_find(&names, "sumsin");
+	assert(idx >= 0);
+	assert(*(bool*) vec_get_item(&weaks, idx)); // weak symbol
+
+	vec_free(&names);
+	vec_free(&weaks);
+	elfr_free(&elfr);
+}
+
 void test_syms() {
 	struct elf_reader elfr = elfr_create(ELF_FILE_PATH);
 	struct vec defined_syms = elfr_get_global_defined_syms(&elfr);
-	assert(vec_str_find(&defined_syms, "sum") == 1);
-	assert(vec_str_find(&defined_syms, "sumsin") == 1);
+	assert(vec_str_find(&defined_syms, "sum") >= 0);
+	assert(vec_str_find(&defined_syms, "sumsin") >= 0);
 	vec_free(&defined_syms);
 
 	struct vec undefined_syms = elfr_get_undefined_syms(&elfr);
 	printf("undefined_syms len %d\n", undefined_syms.len);
-	assert(vec_str_find(&undefined_syms, "sin") == 1);
+	assert(vec_str_find(&undefined_syms, "sin") >= 0);
 	vec_free(&undefined_syms);
 	elfr_free(&elfr);
 }
@@ -41,6 +60,7 @@ int main(int argc, char** argv) {
 	test_create_and_free();
 	test_text_section_exists();
 	test_syms();
+	test_syms2();
 	printf("PASS!\n");
 	return 0;
 }
