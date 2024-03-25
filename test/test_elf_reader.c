@@ -51,6 +51,18 @@ void test_syms() {
 	elfr_free(&elfr);
 }
 
+void test_elfr_create_from_buffer() {
+	char *buf;
+	int file_size;
+	buf = _elfr_read_file(ELF_FILE_PATH, &file_size);
+	assert(buf);
+
+	struct elf_reader elfr = elfr_create_from_buffer(buf, file_size, false);
+	elfr_free(&elfr);
+	// this free should succeed since we haven't free the buffer in elfr_free
+	free(buf);
+}
+
 int main(int argc, char** argv) {
 	if (argc >= 2) {
 		ELF_FILE_PATH = argv[1];
@@ -61,6 +73,7 @@ int main(int argc, char** argv) {
 	test_text_section_exists();
 	test_syms();
 	test_syms2();
+	test_elfr_create_from_buffer();
 	printf("PASS!\n");
 	return 0;
 }

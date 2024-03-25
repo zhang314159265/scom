@@ -13,6 +13,9 @@ struct elf_reader {
   char *buf; // the buffer storing the whole file content.
 	           // may be updated during relocation. The memory is owned by
 						 // the elf reader object.
+	// whether this elf_reader owns buf. If yes, the destructor should free the
+	// buffer.
+	bool own_buf;
 	int file_size; // file or buf size in bytes
   Elf32_Ehdr* ehdr; // point to the beginning of buf
 
@@ -182,10 +185,11 @@ static void elfr_dump_symbol(struct elf_reader* reader, Elf32_Sym* sym) {
 /*
  * The created elf_reader takes the ownership of 'buf'.
  */
-static struct elf_reader elfr_create_from_buffer(const char* buf, int size) {
+static struct elf_reader elfr_create_from_buffer(const char* buf, int size, bool own_buf) {
   struct elf_reader reader = {0};
   reader.file_size = size;
   reader.buf = (char *) buf;
+	reader.own_buf = own_buf;
   // verify elf header
   assert(reader.file_size >= sizeof(Elf32_Ehdr));
   reader.ehdr = (void*) reader.buf;
@@ -225,9 +229,9 @@ static struct elf_reader elfr_create_from_buffer(const char* buf, int size) {
   return reader;
 }
 
-static struct elf_reader elfr_create(const char* path) {
-  printf("Create elf reader for %s\n", path);
-
+// return the pointer for the buffer on success. Caller should free it.
+// return NULL otherwise.
+static char* _elfr_read_file(const char* path, int* psize) {
   struct stat elf_st;
   int status = stat(path, &elf_st);
   assert(status == 0);
@@ -239,12 +243,26 @@ static struct elf_reader elfr_create(const char* path) {
   assert(status == file_size);
   fclose(fp);
 
-  return elfr_create_from_buffer(buf, file_size);
+	if (psize) {
+		*psize = file_size;
+	}
+	return buf;
+}
+
+static struct elf_reader elfr_create(const char* path) {
+  printf("Create elf reader for %s\n", path);
+
+	char *buf;
+	int file_size;
+	buf = _elfr_read_file(path, &file_size);
+  return elfr_create_from_buffer(buf, file_size, true);
 }
 
 static void elfr_free(struct elf_reader* reader) {
 	assert(reader->buf);
-	free(reader->buf);
+	if (reader->own_buf) {
+		free(reader->buf);
+	}
 	reader->buf = NULL;
 	dict_free(&reader->section_name_to_abs_addr);
 }
