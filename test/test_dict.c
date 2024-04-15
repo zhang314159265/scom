@@ -33,10 +33,23 @@ void test_insert_many() {
 	dict_free(&dict);
 }
 
+void test_foreach() {
+	struct dict dict = dict_create_str_int();
+	dict_put(&dict, strdup("hello"), (void*) 2);
+	dict_put(&dict, strdup("world"), (void*) 3);
+  int sum = 0;
+  DICT_FOREACH(&dict, entry) {
+    sum += (int) entry->val;
+  }
+  assert(sum == 5);
+	dict_free(&dict);
+}
+
 int main(void) {
 	test_locate();
 	test_basic();
 	test_insert_many();
+  test_foreach();
 	printf("PASS!\n");
 	return 0;
 }

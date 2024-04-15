@@ -1,6 +1,6 @@
 CFLAGS := -I../include -m32 -g
 
-first: test_elf_reader
+first: test_dict
 
 test_dict:
 	gcc test_dict.c $(CFLAGS)

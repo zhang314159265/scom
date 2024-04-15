@@ -29,6 +29,11 @@
 #include <stdio.h>
 #include "util.h"
 
+#define DICT_FOREACH(dict_ptr, entry_ptr) \
+  for (struct dict_entry *entry_ptr = dict_begin(dict_ptr); \
+      entry_ptr != dict_end(dict_ptr); \
+      entry_ptr = dict_next(dict_ptr, entry_ptr))
+
 /*
  * Invariants:
  * - free slots don't have memory allocated for key/val
@@ -215,4 +220,31 @@ static void dict_free(struct dict* dict) {
 		}
   }
   free(dict->entries);
+}
+
+static struct dict_entry *dict_end(struct dict *dict) {
+  return dict->entries + dict->capacity;
+}
+
+/*
+ * Skip unused entries until the first used entry or the end.
+ */
+struct dict_entry *_dict_skip_unused(struct dict *dict, struct dict_entry *cur) {
+  while (cur != dict_end(dict) && cur->flags == FREE) {
+    ++cur;
+  }
+  return cur;
+}
+
+static struct dict_entry *dict_next(struct dict *dict, struct dict_entry *cur) {
+  assert(cur != dict_end(dict));
+  return _dict_skip_unused(dict, cur + 1);
+}
+
+/*
+ * If the dict is not empty, return the pointer to the first entry, otherwise
+ * return end.
+ */
+static struct dict_entry *dict_begin(struct dict *dict) {
+  return _dict_skip_unused(dict, dict->entries);
 }
