@@ -159,3 +159,89 @@ static int elfw_add_shdr(struct elf_writer* writer, const char* name, uint32_t t
   vec_append(&writer->shdrtab, &newsh);
   return writer->shdrtab.len - 1;
 }
+
+/*
+ * Create a segment header and record the buffer for the segment.
+ *
+ * Use by both the linker and unit test (called by elfw_manual_text)
+ */
+void elfw_create_segment(struct elf_writer *writer, const char* name, struct str *segbuf, int seglen) {
+  // XXX don't support a combined .text + .bss segment yet.
+  assert(segbuf->len == 0 || segbuf->len == seglen);
+
+  // !!!This alignment is the key to make the generated ELF file work!
+  writer->next_file_off = make_align(writer->next_file_off, 4096);
+  writer->next_va = make_align(writer->next_va, 4096);
+
+	Elf32_Phdr phdr = _elfw_create_phdr(writer->next_file_off, writer->next_va, seglen, name);
+	vec_append(&writer->phdrtab, &phdr);
+	vec_append(&writer->pbuftab, segbuf);
+
+  writer->next_file_off = make_align(writer->next_file_off + phdr.p_filesz, ALIGN_BYTES);
+  writer->next_va = make_align(writer->next_va + phdr.p_memsz, ALIGN_BYTES);
+}
+
+void elfw_write(struct elf_writer *writer, const char *out_path) {
+  // place the .shstrtab
+  Elf32_Shdr* sh_shstrtab = vec_get_item(&writer->shdrtab, writer->ehdr.e_shstrndx);
+  sh_shstrtab->sh_size = writer->shstrtab.len;
+  elfw_place_section_to_layout(writer, sh_shstrtab); // will move writer->next_file_off
+
+  // decide the file offset for the program headers and section headers
+  writer->next_file_off = make_align(writer->next_file_off, ALIGN_BYTES);
+  Elf32_Ehdr* ehdr = &writer->ehdr;
+  ehdr->e_phoff = writer->next_file_off;
+  ehdr->e_phnum = writer->phdrtab.len;
+
+  writer->next_file_off = make_align(writer->next_file_off + sizeof(Elf32_Phdr) * ehdr->e_phnum, ALIGN_BYTES);
+  ehdr->e_shoff = writer->next_file_off;
+  ehdr->e_shnum = writer->shdrtab.len;
+
+  // next_file_off could be incremented for the section header table size.
+  // But it's fine to skip since nobody read it afterwards
+
+  // The layout of the output ELF file is completely decided. Start writing
+  // the content of the file.
+  FILE* fp = fopen(out_path, "wb");
+  assert(fp);
+  fwrite(ehdr, sizeof(Elf32_Ehdr), 1, fp);
+
+  // write segment content
+	for (int i = 0; i < writer->phdrtab.len; ++i) {
+		Elf32_Phdr* phdr = vec_get_item(&writer->phdrtab, i);
+		struct str* pbuf = vec_get_item(&writer->pbuftab, i);
+    fseek(fp, phdr->p_offset, SEEK_SET);
+    assert(pbuf->len == phdr->p_filesz);
+    fwrite(pbuf->buf, 1, phdr->p_filesz, fp);
+	}
+
+  // write .shstrtab
+  _elfw_write_section(fp, sh_shstrtab, writer->shstrtab.buf);
+
+  // write segment table
+  fseek(fp, ehdr->e_phoff, SEEK_SET);
+  VEC_FOREACH(&writer->phdrtab, Elf32_Phdr, phdr) {
+    fwrite(phdr, 1, sizeof(Elf32_Phdr), fp);
+  }
+
+  // write section table. An ELF without a NULL section will trigger warning
+  // by running 'readelf -h'
+  VEC_FOREACH(&writer->shdrtab, Elf32_Shdr, shdr) {
+    fwrite(shdr, 1, sizeof(Elf32_Shdr), fp);
+  }
+
+  fclose(fp);
+  printf("Done writing elf file to %s\n", out_path);
+}
+
+/*
+ * An API used for unit test. In unit test, we can manually craft a
+ * fully relocated text segment and use that to fill the ELF file.
+ */
+void elfw_manual_text(struct elf_writer *writer, struct str *textbuf) {
+	// Assume the program entry point is at the beginning of the text segment
+	writer->ehdr.e_entry = writer->next_va;
+	elfw_create_segment(writer, ".text", textbuf, textbuf->len);
+  assert(writer->phdrtab.len == 1);
+  assert(writer->pbuftab.len == 1);
+}
